@@ -1,0 +1,3 @@
+#!/bin/sh
+# 提交前检查文本文件是否为合法 UTF-8（防止 DLP 密文被提交）
+python tools/check-blobs.py || exit 1
