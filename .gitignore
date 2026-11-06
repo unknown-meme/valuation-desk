@@ -1,0 +1,7 @@
+# 抓下来的原始行情与算好的结果，全部可再生成，不入库
+data/
+__pycache__/
+*.pyc
+*.tmp
+.DS_Store
+Thumbs.db

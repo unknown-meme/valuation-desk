@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>估值决策台 · 沪深300 / 创业板指</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f2ece0'/%3E%3Cpath d='M6 24 L13 15 L19 19 L26 8' stroke='%23191712' stroke-width='2.4' fill='none'/%3E%3Ccircle cx='26' cy='8' r='2.6' fill='%23a63a28'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="brand">
+      <h1>估值决策台</h1>
+      <div class="sub">Valuation Desk · 沪深300 &amp; 创业板指</div>
+    </div>
+    <div class="masthead-right">
+      <div class="stamp" id="stamp">
+        <div class="hint">数据截至</div>
+        <b id="asOf">——</b>
+        <div class="hint" id="genAt">还没取数</div>
+      </div>
+      <button class="btn" id="refreshBtn">
+        <span class="spin"></span><span class="label">刷新数据</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ────────────────────────────── 一、今天的判决 -->
+  <div class="grid hero">
+    <div class="card verdict rise" id="verdictCard">
+      <div class="eyebrow">壹 · 今天该做什么</div>
+      <div class="verdict-word tone-wait" id="verdictWord">取数中…<span class="tag" id="verdictTag"></span></div>
+      <div class="verdict-line" id="verdictLine">正在从数据源拉取最新点位与估值，通常需要 10～40 秒。</div>
+      <div class="statrow" id="verdictStats">
+        <div><div class="stat">点位</div><div class="statv">——</div></div>
+        <div><div class="stat">估值</div><div class="statv">——</div></div>
+        <div><div class="stat">历史分位</div><div class="statv">——</div></div>
+        <div><div class="stat">买入 / 清仓 点位</div><div class="statv">——</div></div>
+      </div>
+      <div class="holdrow">
+        <span class="k">我现在</span>
+        <span class="toggle" id="holdToggle">
+          <button data-hold="0" aria-pressed="true">空仓</button>
+          <button data-hold="1" aria-pressed="false">已持仓</button>
+        </span>
+        <span class="k" style="letter-spacing:.02em">空仓看“该不该买”，持仓看“该不该卖”</span>
+      </div>
+      <div class="nextup" id="nextUp"></div>
+    </div>
+    <div class="card tight mini rise" id="miniList"></div>
+  </div>
+
+  <!-- ────────────────────────────── 二、标尺 -->
+  <section class="rise">
+    <div class="sechead">
+      <span class="num">02</span>
+      <h2>估值标尺</h2>
+      <div class="note">指针停在哪一档，就做哪一档的事 · 点小卡可切换标的</div>
+    </div>
+    <div id="rulers"></div>
+  </section>
+
+  <!-- ────────────────────────────── 三、主图 -->
+  <section class="rise">
+    <div class="sechead">
+      <span class="num">03</span>
+      <h2>点位与四条线</h2>
+      <div class="note">圆点＝机械回放的买点，方块＝卖点；图例可点开关</div>
+    </div>
+    <div class="card">
+      <div class="tabs" id="mainTabs">
+        <button data-tab="hs300" aria-selected="true">沪深300 · PE</button>
+        <button data-tab="cyb" aria-selected="false">创业板指 · PB</button>
+      </div>
+      <div class="legend" id="mainLegend"></div>
+      <div class="chart-wrap" id="mainChartWrap"></div>
+    </div>
+  </section>
+
+  <!-- ────────────────────────────── 四、两个辅助视角 -->
+  <section class="rise">
+    <div class="sechead">
+      <span class="num">04</span>
+      <h2>两个辅助视角</h2>
+      <div class="note">它们和估值不总是一致的；两个都便宜，才是真便宜</div>
+    </div>
+    <div class="grid" style="grid-template-columns:1fr 1fr" id="auxGrid">
+      <div class="card">
+        <div class="ruler-head"><h3>股债性价比</h3><span class="unit">盈利收益率 − 十年国债</span>
+          <span class="now" id="spreadNow"></span></div>
+        <div class="chart-wrap" id="spreadChart"></div>
+        <div class="ruler-foot" style="margin-top:12px">
+          <div><div class="k">读法</div><span id="spreadNote">越高＝股票相对债券越便宜</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ruler-head"><h3>全收益 vs 中证全债</h3><span class="unit">含分红，都从 100 算起</span>
+          <span class="now" id="bondNow"></span></div>
+        <div class="chart-wrap" id="bondChart"></div>
+        <div class="ruler-foot" style="margin-top:12px">
+          <div><div class="k">读法</div><span id="bondNote">蓝线贴近或跌破债券线＝股票极端便宜</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ────────────────────────────── 五、空仓的钱放哪 -->
+  <section class="rise">
+    <div class="sechead">
+      <span class="num">05</span>
+      <h2>空仓的钱放哪里</h2>
+      <div class="note">等不到买点的年份，钱不能干躺着</div>
+    </div>
+    <div class="card">
+      <div class="yieldstrip">
+        <div>
+          <div class="yield-big" id="dyBig">——<small> %</small></div>
+          <div class="yield-note" id="dyNote">中证红利低波 · 股息率</div>
+        </div>
+        <div>
+          <div class="yield-bar" id="dyBar"><i style="width:0%"></i><span class="mark"></span></div>
+          <div class="yield-scale"><span>3%</span><span>4%</span><span>5% 门槛</span><span>6%</span></div>
+          <div class="yield-note" id="dySub" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ────────────────────────────── 六、台账 -->
+  <section class="rise">
+    <div class="sechead">
+      <span class="num">06</span>
+      <h2>台账</h2>
+      <div class="note">按月机械执行这套规则，历史上发生了什么</div>
+    </div>
+    <div class="tabs small" id="tableTabs">
+      <button data-tab="hs300" aria-selected="true">沪深300</button>
+      <button data-tab="cyb" aria-selected="false">创业板指</button>
+    </div>
+    <div class="grid" style="grid-template-columns:1fr 1.15fr">
+      <div class="card"><div id="troughTable"></div></div>
+      <div class="card"><div id="tradeTable"></div></div>
+    </div>
+  </section>
+
+  <!-- ────────────────────────────── 七、说明 -->
+  <section class="rise">
+    <div class="sechead">
+      <span class="num">07</span>
+      <h2>这些数字是什么意思</h2>
+      <div class="note">大白话，不需要金融专业背景</div>
+    </div>
+    <div class="card">
+      <div class="warnbox">
+        <b>先说清楚：</b>这是一个“算好位置、然后长期等待”的工具，不是每天给你信号的软件。
+        它一年可能只让你动一两次手，其余时间是让你<b>忍住</b>。页面上所有结论都不构成投资建议。
+      </div>
+      <div class="notes">
+        <p class="lead">这四条线是拿历史大底算出来的。把过去几次股灾最低点那天的估值（沪深300 看 PE，创业板看 PB）挑出来排队，取中间那个数，叫“中位数”。<b>买入线 = 中位数 × 110%</b>，等于在最惨的位置上再留一点缓冲；<b>深入线</b>就是中位数本身；<b>深水线 = 中位数 × 90%</b>，给“跌得比历史更惨”准备的一档。清仓线反过来找：沪深300 取原文回测用的 PE 14.34，创业板取 PB 的历史 75% 分位——意思是“历史上只有不到四分之一的月份比现在更贵”，到了就该走。</p>
+
+        <p>线为什么是斜的？因为 <code>点位 = 估值 × 每股盈利</code>。企业每年还在赚钱，盈利在涨，同样的 PE 对应的点位自然一年比一年高，所以四条线整体向上爬。<b>千万别拿固定的 3500 点当买点</b>——那个数字每年都在作废，这也是抄这套作业最容易错的地方。</p>
+
+        <p><b>为什么大部分时间什么都不做？</b>因为估值跌到买入线以下的机会十年也就那么几回。图上那些圆点、方块就是全部的动手时刻，中间空着的年份是设计的一部分。空仓时钱别闲着：红利低波股息率超过 5%，就把钱放进去吃股息。</p>
+
+        <p><b>页面上最该看三个数：</b>① 大字判决和“距买入线还差多少”，它决定你现在要不要动；② 标尺上的指针停在哪一格；③ 股债性价比的历史分位——它和估值不总是一致，两个都指向便宜才是真便宜。</p>
+
+        <p><b>这套东西什么时候会失效？</b>① 底部越来越浅：如果 A 股从此再也跌不到 PE 11，你就永远等不到车，钱在门外站十年；② 盈利断崖：PE 的分母是净利润，经济急跌时 PE 会“假高”，看着不便宜其实已经跌透了；③ 清仓线 14.34 是原文回测出来的经验值，不是天条，盈利增速长期下台阶就得往下挪。</p>
+
+        <p><b>台账里的收益怎么算的？</b>按月检查估值：进哪一档买一份，同一档里每再跌 10% 追加一份，最多 7 份；上穿清仓线一次性清掉。<b>不含分红、不算手续费</b>，所以真实收益会略高于表里的数字（沪深300 股息率约 3%）。它只用来验证规则大致长什么样，不是精确回测。</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>数据来源：中证指数有限公司（官方点位/全收益/中证全债/红利低波估值）· 乐咕乐股（加权滚动 PE / 加权 PB）· 十年国债收益率经 akshare 获取</div>
+    <div>仅供个人决策参考，不构成投资建议 · <span id="footVersion">v1.0</span></div>
+  </footer>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
