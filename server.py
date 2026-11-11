@@ -676,7 +676,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--port", type=int, default=8790)
     ap.add_argument("--no-open", action="store_true")
     args = ap.parse_args()
 

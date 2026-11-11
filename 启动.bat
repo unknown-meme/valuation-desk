@@ -1,13 +1,13 @@
 @echo off
 chcp 65001 >nul
-title Valuation Desk
+title Valuation Desk - 8790
 cd /d "%~dp0"
 
 rem If the desk is already running, just open the page instead of starting a second one.
-curl.exe -sf --max-time 2 -o NUL http://127.0.0.1:8765/api/health
+curl.exe -sf --max-time 2 -o NUL http://127.0.0.1:8790/api/health
 if not errorlevel 1 (
   echo   Already running - opening browser...
-  start "" http://127.0.0.1:8765/
+  start "" http://127.0.0.1:8790/
   exit /b 0
 )
 
