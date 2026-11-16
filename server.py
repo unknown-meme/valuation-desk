@@ -164,8 +164,17 @@ def fetch_y10():
 
 
 def fetch_em_index(symbol):
+    # East money first, sina as fallback: both drop the connection from time to time.
     import akshare as ak
-    df = ak.stock_zh_index_daily_em(symbol=symbol)
+    df = None
+    for _attempt in range(2):
+        try:
+            df = ak.stock_zh_index_daily_em(symbol=symbol)
+            break
+        except Exception:
+            time.sleep(1.2)
+    if df is None or len(df) < 100:
+        df = ak.stock_zh_index_daily(symbol=symbol)
     out = pd.DataFrame({
         "date": pd.to_datetime(df["date"]),
         "close": pd.to_numeric(df["close"], errors="coerce"),
