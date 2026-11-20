@@ -631,6 +631,50 @@
       "<tbody>" + trs + open + "</tbody></table>";
   }
 
+// ------------------------------------------------------------- 执行计划
+  function renderPlan() {
+    const pl = state.data && state.data.plan;
+    const sec = $("#planSection");
+    if (!sec) return;
+    if (!pl || !pl.positions || !pl.positions.length) { sec.style.display = "none"; return; }
+    sec.style.display = "";
+    const p = pl.positions[0];
+    const money = (v) => (v == null ? "——" : (v / 10000).toFixed(1) + " 万");
+    $("#planMeta").textContent =
+      "总资金 " + money(pl.total_capital) + " · 1 份 = " + money(p.unit) +
+      (pl.as_of ? " · 按 " + pl.as_of + " 收盘" : "") + (pl.note ? " · " + pl.note : "");
+
+    const cols = [];
+    cols.push('<div class="plan-col"><div class="plan-k">当前持仓</div>' +
+      '<div class="plan-v">' + money(p.cost) + '<small>' + (p.weight_pct != null ? p.weight_pct + "% 仓位" : "") + "</small></div>" +
+      '<div class="plan-sub">均价 <b>' + int(p.avg) + "</b> · 现价 <b>" + int(p.close) + "</b> · " + p.unit_label + " <b>" + num(p.val) + "</b><br>" +
+      '浮动盈亏 <b style="color:' + (p.pnl >= 0 ? "#8fbf9a" : "#e8a08a") + '">' + signed(p.pnl, 0) + " 元（" + signed(p.pnl_pct, 2) + "%）</b></div></div>");
+
+    p.steps.forEach((s, i) => {
+      cols.push('<div class="plan-col' + (i === 0 ? " next" : "") + '">' +
+        '<div class="plan-k">' + (i === 0 ? "下一档 · " : "再下一档 · ") + s.label + "</div>" +
+        '<div class="plan-v">' + int(s.points) + "<small>点</small></div>" +
+        '<div class="plan-sub">' +
+        (s.active ? '<b style="color:#e8b4a0">已到，可以执行</b>' : "还需 <b>" + signed(s.move_pct) + "%</b>") +
+        " · " + p.unit_label + " <b>" + num(s.val) + "</b><br>加 <b>" + money(s.amount) + "</b>（" + s.units + " 份）</div></div>");
+    });
+
+    const e2 = p.exit;
+    cols.push('<div class="plan-col exit"><div class="plan-k">清仓 · ' + e2.label + "</div>" +
+      '<div class="plan-v">' + int(e2.points) + "<small>点</small></div>" +
+      '<div class="plan-sub">' +
+      (e2.active ? "<b>已到，该清仓</b>" : "还需 <b>" + signed(e2.move_pct) + "%</b>") +
+      " · " + p.unit_label + " <b>" + num(e2.val) + "</b><br>全部卖出</div></div>");
+
+    $("#planGrid").innerHTML = cols.join("");
+    const nx = p.steps[0];
+    $("#planFoot").innerHTML = nx
+      ? (nx.active
+        ? '<span>现在就该动手：<span class="hot">' + int(nx.points) + " 点已到，按计划加 " + money(nx.amount) + "</span></span>"
+        : '<span>下一次动手：<span class="hot">' + int(nx.points) + " 点（还需 " + signed(nx.move_pct) + "%）加 " + money(nx.amount) + "</span></span>")
+      : "";
+    $("#planFoot").innerHTML += '<span style="color:rgba(233,226,208,.45)">点位按每个交易日收盘后的估值重算，给的是"该在哪个价动手"，不是预测；盘中请以你实际下单的价格为准。</span>';
+  }
   // ------------------------------------------------------------- 渲染总控
   function render() {
     $$("#mainTabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === state.tab)));
@@ -638,6 +682,7 @@
     renderStamp();
     renderVerdict();
     renderMini();
+    renderPlan();
     renderRulers();
     renderLegend();
     renderMain();

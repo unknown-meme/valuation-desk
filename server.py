@@ -522,6 +522,93 @@ def build_dividend():
     }
 
 
+# ---------------------------------------------------------------- 个人执行计划
+PORTFOLIO_FILE = os.path.join(DATA_DIR, "portfolio.json")
+
+
+def load_portfolio():
+    """读个人仓位配置：总资金、已投入成本、均价、每份金额、剩余档位。"""
+    if not os.path.exists(PORTFOLIO_FILE):
+        return None
+    try:
+        with open(PORTFOLIO_FILE, "r", encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception as exc:
+        warn("portfolio.json 读取失败：%s" % str(exc)[:80])
+        return None
+
+
+def build_plan(payload):
+    """把仓位配置和当前估值拼成一张开门见山的执行单。"""
+    pf = load_portfolio()
+    if not pf:
+        return None
+    blocks = {"000300": payload.get("hs300"), "399006": payload.get("cyb")}
+    total = float(pf.get("total_capital") or 0) or None
+    out = []
+    for pos in pf.get("positions", []):
+        b = blocks.get(str(pos.get("code")))
+        if not b or "now" not in b:
+            continue
+        now = b["now"]
+        close = float(now["close"])
+        val = float(now["val"])
+        unit = float(pos.get("unit") or 0)
+        cost = float(pos.get("cost") or 0)
+        avg = float(pos.get("avg_price") or 0) or (close / val * float(now["buy_val"]))
+        pnl_pct = (close / avg - 1) * 100 if avg else 0.0
+
+        lv = {"buy": float(now["buy_val"]), "deep": float(now["deep_val"]),
+              "deep2": float(now["deep2_val"]), "sell": float(now["sell_val"])}
+        pts = {k: (v / val * close) for k, v in lv.items()}
+
+        steps = []
+        for step in pos.get("plan", []):
+            key = step.get("trigger")
+            if key not in pts:
+                continue
+            steps.append({
+                "kind": "buy",
+                "label": step.get("label") or {"deep": "深入线", "deep2": "深水线", "buy": "买入线"}.get(key, key),
+                "points": rnd(pts[key], 0),
+                "move_pct": rnd((pts[key] / close - 1) * 100, 1),
+                "val": rnd(lv[key], 2),
+                "units": int(step.get("units") or 1),
+                "amount": rnd(float(step.get("units") or 1) * unit, 0),
+                "active": bool(pts[key] >= close),
+            })
+        steps.sort(key=lambda s: -s["points"])
+        exit_step = {
+            "kind": "sell",
+            "label": "清仓线",
+            "points": rnd(pts["sell"], 0),
+            "move_pct": rnd((pts["sell"] / close - 1) * 100, 1),
+            "val": rnd(lv["sell"], 2),
+            "units": 0,
+            "amount": None,
+            "active": bool(close >= pts["sell"]),
+        }
+        out.append({
+            "code": pos.get("code"),
+            "name": b["name"],
+            "unit_label": b["unit"],
+            "close": rnd(close, 1),
+            "val": rnd(val, 2),
+            "cost": rnd(cost, 0),
+            "avg": rnd(avg, 0),
+            "value": rnd(cost * (1 + pnl_pct / 100), 0),
+            "pnl": rnd(cost * pnl_pct / 100, 0),
+            "pnl_pct": rnd(pnl_pct, 2),
+            "weight_pct": rnd(cost / total * 100, 1) if total else None,
+            "unit": rnd(unit, 0),
+            "steps": steps,
+            "exit": exit_step,
+        })
+    if not out:
+        return None
+    return {"total_capital": rnd(total, 0) if total else None, "as_of": payload.get("as_of"),
+            "note": pf.get("note", ""), "positions": out}
+
 def build_payload(trigger="manual", force=False):
     global FORCE
     FORCE = bool(force)
@@ -555,6 +642,10 @@ def build_payload(trigger="manual", force=False):
             payload[key] = fn()
         except Exception:
             warn("%s 计算失败：%s" % (key, traceback.format_exc(limit=1).replace("\n", " ")[:160]))
+    try:
+        payload["plan"] = build_plan(payload)
+    except Exception:
+        warn("执行计划计算失败：" + traceback.format_exc(limit=1).replace("\n", " ")[:160])
     payload["warnings"] = list(WARNINGS)
     payload["elapsed_ms"] = int((time.time() - t0) * 1000)
     return payload

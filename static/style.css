@@ -475,3 +475,45 @@ body.refreshing .live { opacity: .45; transition: opacity .3s; }
   .ruler { padding: 18px 16px 14px; }
   .zone-bar div { font-size: 9px; letter-spacing: 0; }
 }
+/* ---------------------------------------------------------- 执行计划条 */
+.plan-wrap { margin-top: 22px; }
+.plan-card {
+  background: var(--ink); color: #e9e2d0; border-radius: var(--r);
+  padding: 22px 26px 18px; position: relative; overflow: hidden;
+  box-shadow: 0 22px 46px -30px rgba(25, 23, 18, .95);
+}
+.plan-card::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(to right, rgba(233, 226, 208, .055) 1px, transparent 1px);
+  background-size: 56px 100%;
+}
+.plan-head {
+  display: flex; align-items: baseline; gap: 14px;
+  border-bottom: 1px solid rgba(233, 226, 208, .18);
+  padding-bottom: 10px; position: relative;
+}
+.plan-title { font-family: var(--f-display); font-size: 19px; letter-spacing: .1em; }
+.plan-meta { margin-left: auto; font-size: 11.5px; color: rgba(233, 226, 208, .55); letter-spacing: .05em; text-align: right; }
+.plan-grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; margin-top: 14px; position: relative; }
+.plan-col { padding: 6px 20px 10px; border-right: 1px solid rgba(233, 226, 208, .14); }
+.plan-col:last-child { border-right: 0; padding-right: 0; }
+.plan-col:first-child { padding-left: 0; }
+.plan-k { font-size: 10.5px; letter-spacing: .16em; color: rgba(233, 226, 208, .5); margin-bottom: 6px; }
+.plan-v { font-family: var(--f-num); font-size: 27px; line-height: 1.15; }
+.plan-v small { font-size: 12px; color: rgba(233, 226, 208, .55); margin-left: 5px; }
+.plan-sub { font-size: 12px; color: rgba(233, 226, 208, .68); margin-top: 7px; line-height: 1.55; }
+.plan-sub b { color: #e9e2d0; font-family: var(--f-num); font-size: 13px; }
+.plan-col.next { background: rgba(233, 226, 208, .07); outline: 1px solid rgba(233, 226, 208, .22); outline-offset: -8px; border-radius: 2px; }
+.plan-col.next .plan-k { color: var(--gold); }
+.plan-col.exit .plan-k { color: #d98a72; }
+.plan-foot {
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(233, 226, 208, .2);
+  font-size: 12.5px; color: rgba(233, 226, 208, .75);
+  display: flex; gap: 26px; flex-wrap: wrap; align-items: baseline; position: relative;
+}
+.plan-foot .hot { color: #e8b4a0; font-family: var(--f-num); font-size: 14.5px; }
+@media (max-width: 1060px) {
+  .plan-grid { grid-template-columns: 1fr 1fr; }
+  .plan-col { border-right: 0; border-bottom: 1px solid rgba(233, 226, 208, .12); padding: 10px 0; }
+}
+@media (max-width: 720px) { .plan-grid { grid-template-columns: 1fr; } .plan-meta { display: none; } }

@@ -101,3 +101,22 @@ PARAMS = {
 - `.githooks/pre-commit` —— 每次 commit 自动跑它（已通过 `git config core.hooksPath .githooks` 启用）
 
 编辑 `.md` 时请用 PowerShell / 记事本 / 编辑器保存，**别用 Python 脚本改**。如果 `git status` 里某个文本文件大小莫名翻了一倍，那就是被加密了：用 PowerShell 重写一遍再提交。
+
+## 我的执行计划（个人仓位）
+
+页面顶部那条深色卡片是**给你自己用的执行单**，数据来自 `data/portfolio.json`（这个文件在 `.gitignore` 里，不会被提交）：
+
+```json
+{
+  "total_capital": 500000,
+  "note": "方案A：1 份 = 2 万…",
+  "positions": [
+    { "code": "399006", "cost": 44000, "avg_price": 2285, "unit": 20000,
+      "plan": [ { "trigger": "deep", "units": 2 }, { "trigger": "deep2", "units": 3 } ] }
+  ]
+}
+```
+
+- `cost` 已投入成本、`avg_price` 买入均价、`unit` 一份的金额
+- `plan` 是剩余档位：`deep` = 深入线、`deep2` = 深水线，`units` 是这一档买几份
+- 卡片上的点位会**随估值自动重算**（点位 = 档位估值 ÷ 当前估值 × 当前点位），所以不要手抄点位，每天刷新看它给什么
