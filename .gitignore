@@ -4,4 +4,4 @@ __pycache__/
 *.pyc
 *.tmp
 .DS_Store
-Thumbs.db
+Thumbs.dbserver.log
